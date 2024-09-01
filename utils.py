@@ -3,6 +3,7 @@ import numpy as np
 DIST_HIP_TO_KNEE = 32  # cm
 DIST_KNEE_TO_ANKLE = 32  # cm
 DIST_ANKLE_TO_TIP = 15  # cm
+DIST_BETWEEN_FOOT_CENTERS = 6 # cm
 
 
 test_cases = [
@@ -10,7 +11,6 @@ test_cases = [
     {"hip_angle": 90, "knee_angle": 180, "ankle_angle": 0, "dist": 49},
     {"hip_angle": 45, "knee_angle": 90, "ankle_angle": 45, "dist": np.sqrt((np.sqrt(2) * 32)**2 + 15**2)},
 ]
-
 
 def calc_abs_dist_and_angle(hip_angle, knee_angle, ankle_angle, use_degrees=True):
     # print('Calculating:', hip_angle, knee_angle, ankle_angle)
@@ -64,3 +64,39 @@ def test_calc_abs_dist_and_angle():
 
 
 test_calc_abs_dist_and_angle()
+
+# 1, 2, 3, 4, 5, 6 (except minus 1 for joints)
+#   1-4
+#   | |
+#   2 5
+#  / /
+# 3 6
+# angles assumed to be in degrees
+def calc_balance_from_six_angles(angles):
+    left_hip = angles[0]
+    left_knee = angles[1]
+    left_foot = angles[2]
+
+    right_hip = angles[3]
+    right_knee = angles[4]
+    right_foot = angles[5]
+
+    top_angle = np.abs(right_hip - left_hip)
+    dist_toe_l, angle_toe_l = calc_abs_dist_and_angle(left_hip, left_knee, left_foot)
+    dist_toe_r, angle_toe_r = calc_abs_dist_and_angle(right_hip, right_knee, right_foot)
+    dist_heel_l, angle_heel_l = calc_abs_dist_and_angle(left_hip, left_knee, 0)
+    dist_heel_r, angle_heel_r = calc_abs_dist_and_angle(right_hip, right_knee, 0)
+    dist_heel_l += DIST_ANKLE_TO_TIP
+    dist_heel_r += DIST_ANKLE_TO_TIP
+
+    print(top_angle)
+    print("(dist, angle)")
+    print("left toe:", dist_toe_l, angle_toe_l)
+    print("right toe:", dist_toe_r, angle_toe_r)
+    print("left heel:", dist_heel_l, angle_heel_l)
+    print("right heel:", dist_heel_r, angle_heel_r)
+
+print("balanced")
+calc_balance_from_six_angles([90.0, 96.0, 48.0, 90.0, 96.0, 48.0])
+print("feet apart, balanced")
+calc_balance_from_six_angles([90.0, 134.0, 48.0, 70.0, 134.0, 68.0])
