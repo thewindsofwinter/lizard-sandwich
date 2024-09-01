@@ -22,26 +22,32 @@ numbers_lock = threading.Lock()
 calibrate = [60, 0, 0, 60, 0, 0]
 home = [10, 0, 0, 10, 0, 0]
 # 1->2 unstable (tried: decreasing both hips on 1, increasing and decreasing knee angles, feet decrease)
-keypoints = [[90, 126, 67, 90, 126, 67], [90, 126, 66, 74, 107, 90], 
+keypoints = [[90, 126, 66, 90, 126, 66], [90, 126, 66, 90, 116, 66], [90, 126, 66, 70, 108, 86], 
             #[90, 115, 55, 85, 129, 87], 
-             [90, 130, 53, 85, 137, 84], [90, 140, 65, 85, 147, 84], 
-             [90, 140, 65, 85, 147, 74], [85, 140, 75, 85, 130, 70], 
+             [90, 130, 53, 85, 137, 84], [90, 140, 64, 85, 147, 84], 
+             # [90, 126, 54, 85, 132, 74], 
+             [90, 137, 66, 85, 135, 74],
+             [90, 129, 54, 85, 126, 62], [85, 126, 62, 85, 126, 62],
+             [70, 30, 15, 70, 30, 15]]
+# ,
+             
+#              [90, 145, 62, 85, 152, 82], [90, 145, 62, 85, 152, 72], [90, 140, 65, 85, 147, 74], [85, 140, 75, 85, 130, 70], 
              
              
-             # untested
-             [90, 132, 66, 88, 126, 87], 
-            [88, 136, 66, 86, 126, 87], [90, 140, 76, 88, 150, 84], 
-            [88, 150, 82, 88, 150, 82],
-            [90, 126, 66, 90, 126, 66], [73, 108, 90, 90, 126, 66], 
-            [73, 126, 84, 90, 126, 66], [88, 126, 84, 90, 126, 66], 
-            [88, 126, 84, 90, 136, 66], [88, 150, 84, 90, 140, 76], 
-            [88, 150, 82, 88, 150, 82]]
+#              # untested
+#              [90, 132, 66, 88, 126, 87], 
+#             [88, 136, 66, 86, 126, 87], [90, 140, 76, 88, 150, 84], 
+#             [88, 150, 82, 88, 150, 82],
+#             [90, 126, 66, 90, 126, 66], [73, 108, 90, 90, 126, 66], 
+#             [73, 126, 84, 90, 126, 66], [88, 126, 84, 90, 126, 66], 
+#             [88, 126, 84, 90, 136, 66], [88, 150, 84, 90, 140, 76], 
+#             [88, 150, 82, 88, 150, 82]]
 
 keypoint_num = [-1, 0]
 keypoint_lock = threading.Lock()
 
 lower_limits = [0, 0, 0, 0, 0, 0]
-upper_limits = [90, 180, 90, 90, 180, 90]
+upper_limits = [100, 180, 90, 100, 180, 90]
 speed = [1, 2, 1, 1, 2, 1]
 
 def to_keypoint(keypoint):
@@ -59,10 +65,9 @@ def to_keypoint(keypoint):
         return commands.tolist()
 
 def at_keypoint(keypoint):
-    with numbers_lock:
-        deltas = np.array(keypoint) - np.array(numbers)
-        max_delta = np.max(np.abs(deltas))
-        return max_delta < 1.5
+    deltas = np.array(keypoint) - np.array(read_state())
+    max_delta = np.max(np.abs(deltas))
+    return max_delta < 0.3
 
 def increment_keypoint(keypoint_num):
     print('called')
@@ -85,6 +90,13 @@ def command_loop():
                 print("state:", read_state())
             else:
                 point = keypoints[keypoint_num[0] % len(keypoints)] 
+                if (keypoint_num[0] // len(keypoints)) % 2 == 1:
+                    point = [point[3], point[4], point[5], point[0], point[1], point[2]]
+                    
+                if at_keypoint(point):
+                    keypoint_num[0] += 1
+                    continue
+
                 print(keypoints[keypoint_num[0] % len(keypoints)] )
                 send_action(point)
                 print(point)
@@ -189,7 +201,7 @@ def read_state():
             try:
                 # Copy state
                 for i in range(NUM_JOINTS):
-                    state[i] = numbers[i]
+                    state[i] = float(numbers[i])
                 #print(f"Got: {state}")
             except ValueError:
                 print(f"Invalid numbers: {line}")
