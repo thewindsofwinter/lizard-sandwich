@@ -29,10 +29,11 @@ one_step = [[90, 126, 66, 90, 126, 66], [90, 126, 66, 90, 116, 66], [90, 126, 66
              [90, 130, 53, 85, 137, 84], [90, 140, 64, 85, 147, 84], [90, 137, 66, 85, 135, 74],
              [90, 129, 54, 85, 126, 62], [85, 126, 62, 85, 126, 62], [70, 30, 15, 70, 30, 15]]
 
+# TODO: Share global variables not by making an array and changing its contents
 keypoint_num = [-1]
 keypoint_lock = threading.Lock()
 
-mode = Mode.NEUTRAL
+mode = [Mode.NEUTRAL]
 mode_lock = threading.Lock()
 
 lower_limits = [0, 0, 0, 0, 0, 0]
@@ -44,11 +45,6 @@ def at_keypoint(keypoint):
     max_delta = np.max(np.abs(deltas))
     return max_delta < 0.3
 
-def increment_keypoint(keypoint_num):
-    print('called')
-    with keypoint_lock:
-        keypoint_num[0] += 1
-
 def get_mode():
     with mode_lock:
         return mode[0]
@@ -58,6 +54,7 @@ def command_loop():
     i = 0
     while i < 10000:
         with mode_lock:
+            print(mode[0])
             if mode[0] == Mode.NEUTRAL:
                 pass
             elif mode[0] == Mode.SIT:
@@ -145,11 +142,23 @@ def on_release(key):
     if key_char == 't':
         print('terminating')
         return False
-    if key_char == 'h':
+    elif key_char == 'h':
         with mode_lock:
             mode[0] = Mode.SIT
         with keypoint_lock:
             keypoint_num[0] = -1
+    elif key_char == 's':
+        with mode_lock:
+            mode[0] = Mode.STAND
+    elif key_char == 'u':
+        with mode_lock:
+            mode[0] = Mode.HIP_UP
+    elif key_char == 'd':
+        with mode_lock:
+            mode[0] = Mode.HIP_DOWN
+    elif key_char == 'w':
+        with mode_lock:
+            mode[0] = Mode.STEP
 
 def main():
     open_robot()
